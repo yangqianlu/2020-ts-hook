@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react';
+import { useMountedRef } from './index'
 interface State<D> { 
   stat: 'idle' | 'loading' | 'error' | 'success',
   error: Error | null,
@@ -13,39 +14,49 @@ const defaultInitState:State<null> = {
 const defaultConfig = {
   throwError:false
 }
-export const useAsync = <D>(initState?: State<D>,initConfig?:typeof defaultConfig) => { 
+export const useAsync = <D>(initState?: State<D>, initConfig?: typeof defaultConfig) => { 
+  const mountedRef = useMountedRef();
+  const [retry, setRetry] = useState(()=>() => { })
   const [state, setState] = useState<State<D>>({
     ...defaultInitState,
     ...initState
   })
   const config = {...defaultConfig, ...initConfig}
   // 处理数据
-  const setData = (data:D) => { 
+  const setData = useCallback((data:D) => { 
     setState({
       data,
       stat: 'success',
       error: null
     })
-  }
+  },[])
   // 处理错误
-  const setError = (error:Error) => { 
+  const setError = useCallback((error:Error) => { 
     setState({
       error,
       stat: "error",
       data:null
     })
-  }
-  const run = (promise: Promise<D>) => { 
+  },[])
+  const run = useCallback((promise: Promise<D>, runConfig?: {retry:()=>Promise<D>}) => { 
     if (!promise || !promise.then) { 
       throw new Error("需要传入promise");
     }
-    // loading
-    setState({
-      ...state,
-      stat: "loading",
+    // 保存函数 方便重新调接口
+    setRetry(() => () => { 
+      if (runConfig?.retry) { 
+        run(runConfig?.retry(),runConfig)
+      }
+      
     })
+    // loading
+    setState(prevState => ({ 
+      ...prevState,
+      stat: "loading",
+    }))
     // 调接口
     return promise.then((data) => { 
+      if(mountedRef.current) // 组件卸载就不在执行setData 防止报错
       setData(data);
       return data
     })
@@ -55,7 +66,7 @@ export const useAsync = <D>(initState?: State<D>,initConfig?:typeof defaultConfi
         return error
       })
 
-  }
+  },[config.throwError, mountedRef, setData, setError])
   return {
     isIdle: state.stat === 'idle',
     isLoading: state.stat === 'loading',
@@ -64,6 +75,7 @@ export const useAsync = <D>(initState?: State<D>,initConfig?:typeof defaultConfi
     run,
     setData,
     setError,
+    retry,
     ...state
   }
 

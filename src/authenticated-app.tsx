@@ -1,24 +1,28 @@
 import styled from '@emotion/styled'
 import { useAuth } from 'context/auth-context'
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { Menu, Dropdown, Button } from 'antd'
 import ProjectList from './screen/project-list'
+import ProjectModel from './screen/project-list/project-model'
 import ProjectScreen from './screen/project'
 import { Row } from './component/lib'
 import { useDocumentTitle } from './utils'
 import { ReactComponent as SoftwareLogo } from 'assets/software-logo.svg'
 import { Navigate, Routes, Route } from 'react-router'
+import ProjectPopover from '../src/component/project-popover'
+
 const AuthenticatedApp = () => {
   const { logout, user } = useAuth()
   useDocumentTitle('项目列表', false)
+  const [projectModelOpen, setProjectModelOpen] = useState(false)
   return (
     <Container>
       <Header between={true}>
         <HeaderLeft gap={true}>
           <SoftwareLogo width={'18rem'} color={'rgba(38,132,255)'} />
-          <h3>项目</h3>
-          <h3>用户</h3>
+          <ProjectPopover />
+          <span>用户</span>
         </HeaderLeft>
         <HeaderRight>
           <Dropdown
@@ -46,6 +50,10 @@ const AuthenticatedApp = () => {
           </Routes>
         </BrowserRouter>
       </Main>
+      <ProjectModel
+        projectModelOpen={projectModelOpen}
+        onClose={() => setProjectModelOpen(false)}
+      />
     </Container>
   )
 }

@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Spin, Typography } from 'antd'
+import { Button, Spin, Typography } from 'antd'
 
 export const Row = styled.div<{
   gap?: boolean | number
@@ -42,3 +42,7 @@ export const FullPageErrorFallback = ({ error }: { error: Error | null }) => (
     <Typography.Text>{error?.message}</Typography.Text>
   </FullPage>
 )
+
+export const ButtonNopadding = styled(Button)`
+  padding: 0;
+`
